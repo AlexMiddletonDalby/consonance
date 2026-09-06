@@ -6,6 +6,32 @@ mod note;
 use chord::*;
 use key::*;
 
+fn key_contains_chords(key: &Key, chords: &Vec<Chord>) -> bool {
+    chords
+        .iter()
+        .all(|chord| key.chords().iter().find(|(_, c)| c == chord).is_some())
+}
+fn containing_chords(keys: &Vec<Key>, chords: Vec<Chord>) -> Vec<Key> {
+    keys.to_owned()
+        .into_iter()
+        .filter(|key| key_contains_chords(&key, &chords))
+        .collect()
+}
+fn key_contains_degrees(key: &Key, degrees: &Vec<(Degree, Chord)>) -> bool {
+    degrees.iter().all(|degree| {
+        key.chords()
+            .iter()
+            .find(|(d, c)| *d == degree.0 && *c == degree.1)
+            .is_some()
+    })
+}
+fn containing_degrees(keys: &Vec<Key>, degrees: Vec<(Degree, Chord)>) -> Vec<Key> {
+    keys.to_owned()
+        .into_iter()
+        .filter(|key| key_contains_degrees(&key, &degrees))
+        .collect()
+}
+
 pub fn all_keys() -> Vec<Key> {
     let mut key_list: Vec<Key> = Vec::new();
     for note in enum_iterator::all::<Note>() {
@@ -17,149 +43,138 @@ pub fn all_keys() -> Vec<Key> {
     return key_list;
 }
 
-fn key_contains_chord(key: &Key, chord: &Chord) -> bool {
-    key.chords().iter().find(|(_, c)| c == chord).is_some()
+pub trait Containing<C> {
+    fn containing(&self, c: C) -> Self;
 }
-pub fn find_keys_containing_chord(chord: Chord) -> Vec<Key> {
-    return all_keys()
-        .into_iter()
-        .filter(|key| key_contains_chord(&key, &chord))
-        .collect();
+impl Containing<Vec<Chord>> for Vec<Key> {
+    fn containing(&self, chords: Vec<Chord>) -> Self {
+        containing_chords(self, chords)
+    }
 }
-
-fn key_contains_chords(key: &Key, chords: &Vec<Chord>) -> bool {
-    chords
-        .iter()
-        .all(|chord| key.chords().iter().find(|(_, c)| c == chord).is_some())
+impl Containing<Chord> for Vec<Key> {
+    fn containing(&self, chord: Chord) -> Self {
+        self.containing(vec![chord])
+    }
 }
-pub fn find_keys_containing_chords(chords: Vec<Chord>) -> Vec<Key> {
-    return all_keys()
-        .into_iter()
-        .filter(|key| key_contains_chords(&key, &chords))
-        .collect();
+impl Containing<Vec<(Degree, Chord)>> for Vec<Key> {
+    fn containing(&self, degrees: Vec<(Degree, Chord)>) -> Self {
+        containing_degrees(self, degrees)
+    }
+}
+impl Containing<(Degree, Chord)> for Vec<Key> {
+    fn containing(&self, degree: (Degree, Chord)) -> Self {
+        self.containing(vec![degree])
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::key::ChordType::*;
+    use crate::key::Degree::*;
+    use crate::key::Mode::*;
+    use crate::key::Note::*;
+
     use super::*;
 
     #[test]
     fn find_keys_containing_single_chord() {
-        let keys_with_cmaj = find_keys_containing_chord(Chord {
-            root: Note::C,
-            chord_type: ChordType::Maj,
-        });
+        let keys_with_cmaj = all_keys().containing(vec![Chord::new(C, Maj)]);
         assert_eq!(keys_with_cmaj.len(), 6);
-        assert!(keys_with_cmaj.contains(&Key::of(Note::C, Mode::Major)));
-        assert!(keys_with_cmaj.contains(&Key::of(Note::F, Mode::Major)));
-        assert!(keys_with_cmaj.contains(&Key::of(Note::G, Mode::Major)));
-        assert!(keys_with_cmaj.contains(&Key::of(Note::A, Mode::Minor)));
-        assert!(keys_with_cmaj.contains(&Key::of(Note::D, Mode::Minor)));
-        assert!(keys_with_cmaj.contains(&Key::of(Note::E, Mode::Minor)));
+        assert!(keys_with_cmaj.contains(&Key::of(C, Major)));
+        assert!(keys_with_cmaj.contains(&Key::of(F, Major)));
+        assert!(keys_with_cmaj.contains(&Key::of(G, Major)));
+        assert!(keys_with_cmaj.contains(&Key::of(A, Minor)));
+        assert!(keys_with_cmaj.contains(&Key::of(D, Minor)));
+        assert!(keys_with_cmaj.contains(&Key::of(E, Minor)));
 
-        let keys_with_amin = find_keys_containing_chord(Chord {
-            root: Note::A,
-            chord_type: ChordType::Min,
-        });
+        let keys_with_amin = all_keys().containing(vec![Chord::new(A, Min)]);
         assert_eq!(keys_with_amin.len(), 6);
-        assert!(keys_with_amin.contains(&Key::of(Note::A, Mode::Minor)));
-        assert!(keys_with_amin.contains(&Key::of(Note::D, Mode::Minor)));
-        assert!(keys_with_amin.contains(&Key::of(Note::E, Mode::Minor)));
-        assert!(keys_with_amin.contains(&Key::of(Note::C, Mode::Major)));
-        assert!(keys_with_amin.contains(&Key::of(Note::F, Mode::Major)));
-        assert!(keys_with_amin.contains(&Key::of(Note::G, Mode::Major)));
+        assert!(keys_with_amin.contains(&Key::of(A, Minor)));
+        assert!(keys_with_amin.contains(&Key::of(D, Minor)));
+        assert!(keys_with_amin.contains(&Key::of(E, Minor)));
+        assert!(keys_with_amin.contains(&Key::of(C, Major)));
+        assert!(keys_with_amin.contains(&Key::of(F, Major)));
+        assert!(keys_with_amin.contains(&Key::of(G, Major)));
 
-        let keys_with_fdim = find_keys_containing_chord(Chord {
-            root: Note::F,
-            chord_type: ChordType::Dim,
-        });
+        let keys_with_fdim = all_keys().containing(vec![Chord::new(F, Dim)]);
         assert_eq!(keys_with_fdim.len(), 2);
-        assert!(keys_with_fdim.contains(&Key::of(Note::DSharp, Mode::Minor)));
-        assert!(keys_with_fdim.contains(&Key::of(Note::FSharp, Mode::Major)));
+        assert!(keys_with_fdim.contains(&Key::of(DSharp, Minor)));
+        assert!(keys_with_fdim.contains(&Key::of(FSharp, Major)));
     }
 
     #[test]
     fn find_keys_containing_multiple_chords() {
-        let keys_with_cmaj_and_emin = find_keys_containing_chords(vec![
-            Chord {
-                root: Note::C,
-                chord_type: ChordType::Maj,
-            },
-            Chord {
-                root: Note::E,
-                chord_type: ChordType::Min,
-            },
-        ]);
+        let keys_with_cmaj_and_emin =
+            all_keys().containing(vec![Chord::new(C, Maj), Chord::new(E, Min)]);
         assert_eq!(keys_with_cmaj_and_emin.len(), 4);
-        assert!(keys_with_cmaj_and_emin.contains(&Key::of(Note::C, Mode::Major)));
-        assert!(keys_with_cmaj_and_emin.contains(&Key::of(Note::G, Mode::Major)));
-        assert!(keys_with_cmaj_and_emin.contains(&Key::of(Note::A, Mode::Minor)));
-        assert!(keys_with_cmaj_and_emin.contains(&Key::of(Note::E, Mode::Minor)));
+        assert!(keys_with_cmaj_and_emin.contains(&Key::of(C, Major)));
+        assert!(keys_with_cmaj_and_emin.contains(&Key::of(G, Major)));
+        assert!(keys_with_cmaj_and_emin.contains(&Key::of(A, Minor)));
+        assert!(keys_with_cmaj_and_emin.contains(&Key::of(E, Minor)));
 
-        let keys_with_cmaj_and_cmin = find_keys_containing_chords(vec![
-            Chord {
-                root: Note::C,
-                chord_type: ChordType::Maj,
-            },
-            Chord {
-                root: Note::C,
-                chord_type: ChordType::Min,
-            },
-        ]);
+        let keys_with_cmaj_and_cmin =
+            all_keys().containing(vec![Chord::new(C, Maj), Chord::new(C, Min)]);
         assert_eq!(keys_with_cmaj_and_cmin.len(), 0);
 
-        let keys_with_emaj_and_dsharpdim = find_keys_containing_chords(vec![
-            Chord {
-                root: Note::E,
-                chord_type: ChordType::Maj,
-            },
-            Chord {
-                root: Note::DSharp,
-                chord_type: ChordType::Dim,
-            },
-        ]);
+        let keys_with_emaj_and_dsharpdim =
+            all_keys().containing(vec![Chord::new(E, Maj), Chord::new(DSharp, Dim)]);
         assert_eq!(keys_with_emaj_and_dsharpdim.len(), 2);
-        assert!(keys_with_emaj_and_dsharpdim.contains(&Key::of(Note::E, Mode::Major)));
-        assert!(keys_with_emaj_and_dsharpdim.contains(&Key::of(Note::CSharp, Mode::Minor)));
+        assert!(keys_with_emaj_and_dsharpdim.contains(&Key::of(E, Major)));
+        assert!(keys_with_emaj_and_dsharpdim.contains(&Key::of(CSharp, Minor)));
 
-        let keys_with_cmaj_and_dmin_and_emin = find_keys_containing_chords(vec![
-            Chord {
-                root: Note::C,
-                chord_type: ChordType::Maj,
-            },
-            Chord {
-                root: Note::D,
-                chord_type: ChordType::Min,
-            },
-            Chord {
-                root: Note::E,
-                chord_type: ChordType::Min,
-            },
+        let keys_with_cmaj_and_dmin_and_emin = all_keys().containing(vec![
+            Chord::new(C, Maj),
+            Chord::new(D, Min),
+            Chord::new(E, Min),
         ]);
         assert_eq!(keys_with_cmaj_and_dmin_and_emin.len(), 2);
-        assert!(keys_with_cmaj_and_dmin_and_emin.contains(&Key::of(Note::C, Mode::Major)));
-        assert!(keys_with_cmaj_and_dmin_and_emin.contains(&Key::of(Note::A, Mode::Minor)));
+        assert!(keys_with_cmaj_and_dmin_and_emin.contains(&Key::of(C, Major)));
+        assert!(keys_with_cmaj_and_dmin_and_emin.contains(&Key::of(A, Minor)));
     }
 
     #[test]
-    fn find_keys_containing_c_major_and_d_minor_and_e_minor() {
-        let keys = find_keys_containing_chords(vec![
-            Chord {
-                root: Note::C,
-                chord_type: ChordType::Maj,
-            },
-            Chord {
-                root: Note::D,
-                chord_type: ChordType::Min,
-            },
-            Chord {
-                root: Note::E,
-                chord_type: ChordType::Min,
-            },
-        ]);
+    fn find_keys_containing_single_degree() {
+        let keys_with_cmaj_i = all_keys().containing((I, Chord::new(C, Maj)));
+        assert_eq!(keys_with_cmaj_i.len(), 1);
+        assert!(keys_with_cmaj_i.contains(&Key::of(C, Major)));
 
-        assert_eq!(keys.len(), 2);
-        assert!(keys.contains(&Key::of(Note::C, Mode::Major)));
-        assert!(keys.contains(&Key::of(Note::A, Mode::Minor)));
+        let keys_with_amin_ii = all_keys().containing((II, Chord::new(A, Min)));
+        assert_eq!(keys_with_amin_ii.len(), 1);
+        assert!(keys_with_amin_ii.contains(&Key::of(G, Major)));
+
+        let keys_with_fdim_vii = all_keys().containing((VII, Chord::new(F, Dim)));
+        assert_eq!(keys_with_fdim_vii.len(), 1);
+        assert!(keys_with_fdim_vii.contains(&Key::of(FSharp, Major)));
+    }
+
+    #[test]
+    fn find_keys_containing_multiple_degrees() {
+        let keys_with_cmaj_i_and_emin_iii =
+            all_keys().containing(vec![(I, Chord::new(C, Maj)), (III, Chord::new(E, Min))]);
+        assert_eq!(keys_with_cmaj_i_and_emin_iii.len(), 1);
+        assert!(keys_with_cmaj_i_and_emin_iii.contains(&Key::of(C, Major)));
+
+        let keys_with_dsharpdim_ii_and_emaj_iii = all_keys().containing(vec![
+            (II, Chord::new(DSharp, Dim)),
+            (III, Chord::new(E, Maj)),
+        ]);
+        assert_eq!(keys_with_dsharpdim_ii_and_emaj_iii.len(), 1);
+        assert!(keys_with_dsharpdim_ii_and_emaj_iii.contains(&Key::of(CSharp, Minor)));
+
+        let keys_with_cmaj_i_and_emin_iii_and_fmaj_iv = all_keys().containing(vec![
+            (I, Chord::new(C, Maj)),
+            (III, Chord::new(E, Min)),
+            (IV, Chord::new(G, Maj)),
+        ]);
+        assert_eq!(keys_with_cmaj_i_and_emin_iii_and_fmaj_iv.len(), 0);
+    }
+
+    #[test]
+    fn find_keys_containing_chords_and_degrees() {
+        let keys_with_cmaj_i_and_a_min = all_keys()
+            .containing((I, Chord::new(C, Maj)))
+            .containing(Chord::new(A, Min));
+        assert_eq!(keys_with_cmaj_i_and_a_min.len(), 1);
+        assert!(keys_with_cmaj_i_and_a_min.contains(&Key::of(C, Mode::Major)));
     }
 }

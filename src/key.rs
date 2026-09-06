@@ -69,7 +69,7 @@ impl std::fmt::Display for Mode {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Key {
     pub root: Note,
     pub mode: Mode,
