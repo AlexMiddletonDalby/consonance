@@ -1,7 +1,13 @@
 [package]
 name = "consonance"
+description = "A crate for working with music theory concepts such as notes, intervals, chords, scales, and keys"
 version = "0.1.0"
 edition = "2024"
+readme = "README.md"
+authors = ["Alex Middleton-Dalby"]
+repository = "https://github.com/AlexMiddletonDalby/consonance"
+license = "MIT OR Apache-2.0"
+keywords = ["music", "music-theory", "midi"]
 
 [dependencies]
 enum-iterator = "2.3.0"
