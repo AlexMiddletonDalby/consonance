@@ -1,7 +1,7 @@
 pub use crate::interval::Interval;
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq, enum_iterator::Sequence)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, enum_iterator::Sequence)]
 pub enum Note {
     C,
     CSharp,

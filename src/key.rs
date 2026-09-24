@@ -104,6 +104,17 @@ impl Key {
 
         return chords;
     }
+
+    pub fn find_degree(&self, chord: &Chord) -> Option<Degree> {
+        let chords = self.chords();
+        chords.iter().find_map(|(key_degree, key_chord)| {
+            if key_chord == chord {
+                return Some(key_degree.clone());
+            }
+
+            return None;
+        })
+    }
 }
 impl std::fmt::Display for Key {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

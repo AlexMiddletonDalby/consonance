@@ -1,10 +1,10 @@
-mod chord;
-mod interval;
-mod key;
-mod note;
+pub mod chord;
+pub mod interval;
+pub mod key;
+pub mod note;
 
-use chord::*;
-use key::*;
+pub use chord::*;
+pub use key::*;
 
 fn key_contains_chords(key: &Key, chords: &Vec<Chord>) -> bool {
     chords
@@ -41,6 +41,15 @@ pub fn all_keys() -> Vec<Key> {
     }
 
     return key_list;
+}
+
+pub fn all_chords(of_type: ChordType) -> Vec<Chord> {
+    let mut chord_list: Vec<Chord> = Vec::new();
+    for note in enum_iterator::all::<Note>() {
+        chord_list.push(Chord::new(note, of_type));
+    }
+
+    return chord_list;
 }
 
 pub trait Containing<C> {

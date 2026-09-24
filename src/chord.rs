@@ -2,7 +2,7 @@ pub use crate::interval::Interval;
 pub use crate::note::Note;
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ChordType {
     Maj,
     Min,
@@ -31,15 +31,15 @@ impl fmt::Display for ChordType {
             f,
             "{}",
             match self {
-                Self::Maj => "Major",
-                Self::Min => "Minor",
-                Self::Dim => "Diminished",
+                Self::Maj => "Maj",
+                Self::Min => "Min",
+                Self::Dim => "Dim",
             }
         )
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Chord {
     pub root: Note,
     pub chord_type: ChordType,
