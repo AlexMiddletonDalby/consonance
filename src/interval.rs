@@ -1,3 +1,6 @@
+use std::fmt;
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Interval {
     Root,
     MinorSecond,
@@ -13,6 +16,7 @@ pub enum Interval {
     MajorSeventh,
     Octave,
 }
+
 impl Interval {
     pub fn semitones(&self) -> i8 {
         match self {
@@ -30,5 +34,11 @@ impl Interval {
             Interval::MajorSeventh => 11,
             Interval::Octave => 12,
         }
+    }
+}
+
+impl std::fmt::Display for Interval {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

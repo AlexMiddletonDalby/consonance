@@ -17,7 +17,7 @@ pub enum Note {
     B,
 }
 impl Note {
-    pub fn transposed(&self, interval: Interval) -> Note {
+    pub fn transposed(&self, interval: &Interval) -> Note {
         let mut note = self.clone();
         let semitones = interval.semitones();
 
@@ -57,8 +57,8 @@ mod tests {
 
     #[test]
     fn transpose_notes() {
-        assert_eq!(Note::C.transposed(Interval::Fifth), Note::G);
-        assert_eq!(Note::G.transposed(Interval::Octave), Note::G);
-        assert_eq!(Note::E.transposed(Interval::MinorSecond), Note::F);
+        assert_eq!(Note::C.transposed(&Interval::Fifth), Note::G);
+        assert_eq!(Note::G.transposed(&Interval::Octave), Note::G);
+        assert_eq!(Note::E.transposed(&Interval::MinorSecond), Note::F);
     }
 }

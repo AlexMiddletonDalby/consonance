@@ -2,7 +2,7 @@ pub use crate::interval::Interval;
 pub use crate::note::Note;
 use std::fmt;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, enum_iterator::Sequence)]
 pub enum ChordType {
     Maj,
     Min,
@@ -27,41 +27,63 @@ impl ChordType {
 }
 impl fmt::Display for ChordType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Maj => "Maj",
-                Self::Min => "Min",
-                Self::Dim => "Dim",
-            }
-        )
+        write!(f, "{:?}", self)
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Chord {
     pub root: Note,
-    pub chord_type: ChordType,
+    pub intervals: Vec<Interval>,
 }
 impl Chord {
-    pub fn new(root: Note, chord_type: ChordType) -> Self {
-        Self { root, chord_type }
+    pub fn new(root: Note, intervals: &[Interval]) -> Self {
+        Self {
+            root,
+            intervals: intervals.to_vec(),
+        }
+    }
+
+    pub fn of_type(root: Note, chord_type: ChordType) -> Self {
+        Self {
+            root,
+            intervals: chord_type.formula(),
+        }
     }
 
     pub fn notes(&self) -> Vec<Note> {
         let mut notes = Vec::new();
 
-        for interval in self.chord_type.formula() {
+        for interval in &self.intervals {
             notes.push(self.root.transposed(interval));
         }
 
         return notes;
     }
+
+    pub fn classify(&self) -> Option<ChordType> {
+        for chord_type in enum_iterator::all::<ChordType>() {
+            if self.intervals == chord_type.formula() {
+                return Some(chord_type);
+            }
+        }
+
+        return None;
+    }
 }
+
 impl std::fmt::Display for Chord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.root, self.chord_type)
+        if let Some(chord_type) = self.classify() {
+            write!(f, "{} {}", self.root, chord_type)
+        } else {
+            let mut interval_strings = Vec::new();
+            for interval in &self.intervals {
+                interval_strings.push(interval.to_string());
+            }
+
+            write!(f, "{} {}", self.root, interval_strings.join(" "))
+        }
     }
 }
 
@@ -71,31 +93,31 @@ mod tests {
 
     #[test]
     fn get_notes_in_chords() {
-        let cmaj = Chord::new(Note::C, ChordType::Maj);
+        let cmaj = Chord::of_type(Note::C, ChordType::Maj);
         assert_eq!(cmaj.notes(), vec![Note::C, Note::E, Note::G]);
 
-        let cmin = Chord::new(Note::C, ChordType::Min);
+        let cmin = Chord::of_type(Note::C, ChordType::Min);
         assert_eq!(cmin.notes(), vec![Note::C, Note::DSharp, Note::G]);
 
-        let amaj = Chord::new(Note::A, ChordType::Maj);
+        let amaj = Chord::of_type(Note::A, ChordType::Maj);
         assert_eq!(amaj.notes(), vec![Note::A, Note::CSharp, Note::E]);
 
-        let fdim = Chord::new(Note::F, ChordType::Dim);
+        let fdim = Chord::of_type(Note::F, ChordType::Dim);
         assert_eq!(fdim.notes(), vec![Note::F, Note::GSharp, Note::B]);
     }
 
     #[test]
     fn display_chord_names() {
-        let cmaj = Chord::new(Note::C, ChordType::Maj);
-        assert_eq!(cmaj.to_string(), "C Major");
+        let cmaj = Chord::of_type(Note::C, ChordType::Maj);
+        assert_eq!(cmaj.to_string(), "C Maj");
 
-        let cmin = Chord::new(Note::C, ChordType::Min);
-        assert_eq!(cmin.to_string(), "C Minor");
+        let cmin = Chord::of_type(Note::C, ChordType::Min);
+        assert_eq!(cmin.to_string(), "C Min");
 
-        let amaj = Chord::new(Note::A, ChordType::Maj);
-        assert_eq!(amaj.to_string(), "A Major");
+        let amaj = Chord::of_type(Note::A, ChordType::Maj);
+        assert_eq!(amaj.to_string(), "A Maj");
 
-        let fdim = Chord::new(Note::F, ChordType::Dim);
-        assert_eq!(fdim.to_string(), "F Diminished");
+        let fdim = Chord::of_type(Note::F, ChordType::Dim);
+        assert_eq!(fdim.to_string(), "F Dim");
     }
 }

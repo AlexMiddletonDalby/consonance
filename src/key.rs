@@ -90,10 +90,7 @@ impl Key {
         for formula in self.mode.chord_formulae() {
             chords.push((
                 degree.clone(),
-                Chord {
-                    root: self.root.transposed(formula.interval),
-                    chord_type: formula.chord_type,
-                },
+                Chord::of_type(self.root.transposed(&formula.interval), formula.chord_type),
             ));
             if let Some(next_degree) = enum_iterator::next(&degree) {
                 degree = next_degree
@@ -131,110 +128,26 @@ mod tests {
         assert_eq!(
             Key::of(Note::C, Mode::Major).chords(),
             vec![
-                (
-                    Degree::I,
-                    Chord {
-                        root: Note::C,
-                        chord_type: ChordType::Maj,
-                    }
-                ),
-                (
-                    Degree::II,
-                    Chord {
-                        root: Note::D,
-                        chord_type: ChordType::Min,
-                    }
-                ),
-                (
-                    Degree::III,
-                    Chord {
-                        root: Note::E,
-                        chord_type: ChordType::Min,
-                    }
-                ),
-                (
-                    Degree::IV,
-                    Chord {
-                        root: Note::F,
-                        chord_type: ChordType::Maj,
-                    }
-                ),
-                (
-                    Degree::V,
-                    Chord {
-                        root: Note::G,
-                        chord_type: ChordType::Maj,
-                    }
-                ),
-                (
-                    Degree::VI,
-                    Chord {
-                        root: Note::A,
-                        chord_type: ChordType::Min,
-                    }
-                ),
-                (
-                    Degree::VII,
-                    Chord {
-                        root: Note::B,
-                        chord_type: ChordType::Dim,
-                    }
-                )
+                (Degree::I, Chord::of_type(Note::C, ChordType::Maj)),
+                (Degree::II, Chord::of_type(Note::D, ChordType::Min)),
+                (Degree::III, Chord::of_type(Note::E, ChordType::Min,)),
+                (Degree::IV, Chord::of_type(Note::F, ChordType::Maj,)),
+                (Degree::V, Chord::of_type(Note::G, ChordType::Maj,)),
+                (Degree::VI, Chord::of_type(Note::A, ChordType::Min,)),
+                (Degree::VII, Chord::of_type(Note::B, ChordType::Dim,))
             ]
         );
 
         assert_eq!(
             Key::of(Note::A, Mode::Minor).chords(),
             vec![
-                (
-                    Degree::I,
-                    Chord {
-                        root: Note::A,
-                        chord_type: ChordType::Min,
-                    }
-                ),
-                (
-                    Degree::II,
-                    Chord {
-                        root: Note::B,
-                        chord_type: ChordType::Dim,
-                    }
-                ),
-                (
-                    Degree::III,
-                    Chord {
-                        root: Note::C,
-                        chord_type: ChordType::Maj,
-                    }
-                ),
-                (
-                    Degree::IV,
-                    Chord {
-                        root: Note::D,
-                        chord_type: ChordType::Min,
-                    }
-                ),
-                (
-                    Degree::V,
-                    Chord {
-                        root: Note::E,
-                        chord_type: ChordType::Min,
-                    }
-                ),
-                (
-                    Degree::VI,
-                    Chord {
-                        root: Note::F,
-                        chord_type: ChordType::Maj,
-                    }
-                ),
-                (
-                    Degree::VII,
-                    Chord {
-                        root: Note::G,
-                        chord_type: ChordType::Maj,
-                    }
-                )
+                (Degree::I, Chord::of_type(Note::A, ChordType::Min,)),
+                (Degree::II, Chord::of_type(Note::B, ChordType::Dim,)),
+                (Degree::III, Chord::of_type(Note::C, ChordType::Maj,)),
+                (Degree::IV, Chord::of_type(Note::D, ChordType::Min,)),
+                (Degree::V, Chord::of_type(Note::E, ChordType::Min,)),
+                (Degree::VI, Chord::of_type(Note::F, ChordType::Maj,)),
+                (Degree::VII, Chord::of_type(Note::G, ChordType::Maj,))
             ]
         );
     }
