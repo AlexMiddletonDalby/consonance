@@ -42,3 +42,7 @@ impl std::fmt::Display for Interval {
         write!(f, "{:?}", self)
     }
 }
+
+pub trait GetIntervals {
+    fn intervals(&self) -> Vec<Interval>;
+}
