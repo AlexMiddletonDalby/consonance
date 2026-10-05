@@ -1,6 +1,6 @@
-use crate::chord::classify::Classify;
 use crate::chord::extension::Extension;
 use crate::chord::triad::Triad;
+use crate::classification;
 use crate::interval::{GetIntervals, Interval};
 use crate::note::Note;
 use std::fmt;
@@ -42,35 +42,34 @@ impl Chord {
         return notes;
     }
 
-    pub fn notate(&self) -> Option<String> {
-        if let Some(triad) = Triad::classify(self) {
-            if let Some(extension) = Extension::classify(self) {
-                if let Some(extended) = triad.extend(&extension) {
-                    Some(format!("{}{}", self.root, extended))
-                } else {
-                    None
+    pub fn notate(&self) -> Result<String, &'static str> {
+        if let Ok(details) = classification::classify(self) {
+            if let Some(extension) = details.extension {
+                if let Ok(extended) = details.triad.extend(&extension) {
+                    return Ok(format!("{}{}", self.root, extended));
                 }
-            } else {
-                Some(format!("{}{}", self.root, triad))
             }
-        } else {
-            None
+
+            return Ok(format!("{}{}", self.root, details.triad));
         }
+
+        Err("Unknown chord")
     }
 }
 
 impl std::fmt::Display for Chord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(notated) = self.notate() {
-            write!(f, "{}", notated)
-        } else {
-            write!(f, "{}", "Unknown Chord")
+        match self.notate() {
+            Ok(notated) => write!(f, "{}", notated),
+            Err(error) => write!(f, "{}", error),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::Note::C;
+
     use super::*;
 
     #[test]
@@ -95,33 +94,87 @@ mod tests {
 
         let bmin7 = Chord::build(Note::B, Triad::Min, Some(Extension::MinorSeventh));
         assert_eq!(bmin7.notes(), vec![Note::B, Note::D, Note::FSharp, Note::A]);
+
+        let random = Chord::from_intervals(
+            Note::D,
+            vec![
+                Interval::Root,
+                Interval::MajorThird,
+                Interval::MajorSixth,
+                Interval::Octave,
+            ],
+        );
+        assert_eq!(
+            random.notes(),
+            vec![Note::D, Note::FSharp, Note::B, Note::D]
+        );
     }
 
     #[test]
     fn notating_triad_chords() {
         let cmaj = Chord::triad(Note::C, Triad::Maj);
-        assert_eq!(cmaj.notate(), Some("Cmaj".to_string()));
+        assert_eq!(cmaj.notate(), Ok("Cmaj".to_string()));
 
         let cmin = Chord::triad(Note::C, Triad::Min);
-        assert_eq!(cmin.notate(), Some("Cmin".to_string()));
+        assert_eq!(cmin.notate(), Ok("Cmin".to_string()));
 
         let amaj = Chord::triad(Note::A, Triad::Maj);
-        assert_eq!(amaj.notate(), Some("Amaj".to_string()));
+        assert_eq!(amaj.notate(), Ok("Amaj".to_string()));
 
         let fdim = Chord::triad(Note::F, Triad::Dim);
-        assert_eq!(fdim.notate(), Some("Fdim".to_string()));
+        assert_eq!(fdim.notate(), Ok("Fdim".to_string()));
     }
 
     #[test]
     fn notating_chords_with_extensions() {
         let e7 = Chord::build(Note::E, Triad::Maj, Some(Extension::MinorSeventh));
-        assert_eq!(e7.notate(), Some("E7".to_string()));
+        assert_eq!(e7.notate(), Ok("E7".to_string()));
 
         let gmaj7 = Chord::build(Note::G, Triad::Maj, Some(Extension::MajorSeventh));
-        assert_eq!(gmaj7.notate(), Some("Gmaj7".to_string()));
+        assert_eq!(gmaj7.notate(), Ok("Gmaj7".to_string()));
 
         let bmin7 = Chord::build(Note::B, Triad::Min, Some(Extension::MinorSeventh));
-        assert_eq!(bmin7.notate(), Some("Bmin7".to_string()));
+        assert_eq!(bmin7.notate(), Ok("Bmin7".to_string()));
+    }
+
+    #[test]
+    fn notating_chords_from_intervals() {
+        let cmaj = Chord::from_intervals(
+            C,
+            vec![Interval::Root, Interval::MajorThird, Interval::Fifth],
+        );
+        assert_eq!(cmaj.notate(), Ok("Cmaj".to_string()));
+
+        let gmin7 = Chord::from_intervals(
+            Note::G,
+            vec![
+                Interval::Root,
+                Interval::MinorThird,
+                Interval::Fifth,
+                Interval::MinorSeventh,
+            ],
+        );
+        assert_eq!(gmin7.notate(), Ok("Gmin7".to_string()));
+
+        let no_notes = Chord::from_intervals(Note::A, vec![]);
+        assert!(no_notes.notate().is_err());
+
+        let wrong_notes = Chord::from_intervals(
+            Note::B,
+            vec![Interval::Root, Interval::MinorSecond, Interval::Octave],
+        );
+        assert!(wrong_notes.notate().is_err());
+
+        let extra_notes = Chord::from_intervals(
+            Note::F,
+            vec![
+                Interval::Root,
+                Interval::MajorThird,
+                Interval::Fourth,
+                Interval::Fifth,
+            ],
+        );
+        assert!(extra_notes.notate().is_err());
     }
 
     #[test]

@@ -1,5 +1,4 @@
 use crate::chord::Extension;
-use crate::chord::classify::Classify;
 use crate::interval::{GetIntervals, Interval};
 use std::fmt;
 
@@ -9,20 +8,19 @@ pub enum Triad {
     Min,
     Dim,
 }
-impl Classify<Triad> for Triad {}
 
 impl Triad {
-    pub fn extend(&self, extension: &Extension) -> Option<String> {
+    pub fn extend(&self, extension: &Extension) -> Result<String, &'static str> {
         match self {
             Triad::Maj => match extension {
-                Extension::MajorSeventh => Some("maj7".to_string()),
-                Extension::MinorSeventh => Some("7".to_string()),
+                Extension::MajorSeventh => Ok("maj7".to_string()),
+                Extension::MinorSeventh => Ok("7".to_string()),
             },
             Triad::Min => match extension {
-                Extension::MajorSeventh => None,
-                Extension::MinorSeventh => Some("min7".to_string()),
+                Extension::MajorSeventh => Err("Invalid extension"),
+                Extension::MinorSeventh => Ok("min7".to_string()),
             },
-            Triad::Dim => None,
+            Triad::Dim => Err("Diminished chords cannot be extended"),
         }
     }
 }

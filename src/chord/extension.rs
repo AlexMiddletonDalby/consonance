@@ -1,4 +1,3 @@
-use crate::chord::Classify;
 use crate::interval::{GetIntervals, Interval};
 use std::fmt;
 
@@ -7,8 +6,6 @@ pub enum Extension {
     MajorSeventh,
     MinorSeventh,
 }
-impl Classify<Extension> for Extension {}
-
 impl GetIntervals for Extension {
     fn intervals(&self) -> Vec<Interval> {
         match self {

@@ -1,9 +1,9 @@
 pub mod chord;
-pub mod classify;
+pub mod classification;
 pub mod extension;
 pub mod triad;
 
 pub use chord::*;
-pub use classify::*;
+pub use classification::*;
 pub use extension::*;
 pub use triad::*;
