@@ -95,6 +95,24 @@ mod tests {
         let bmin7 = Chord::build(Note::B, Triad::Min, Some(Extension::MinorSeventh));
         assert_eq!(bmin7.notes(), vec![Note::B, Note::D, Note::FSharp, Note::A]);
 
+        let e9 = Chord::build(Note::E, Triad::Maj, Some(Extension::MinorNinth));
+        assert_eq!(
+            e9.notes(),
+            vec![Note::E, Note::GSharp, Note::B, Note::D, Note::FSharp]
+        );
+
+        let gmaj9 = Chord::build(Note::G, Triad::Maj, Some(Extension::MajorNinth));
+        assert_eq!(
+            gmaj9.notes(),
+            vec![Note::G, Note::B, Note::D, Note::FSharp, Note::A]
+        );
+
+        let bmin9 = Chord::build(Note::B, Triad::Min, Some(Extension::MinorNinth));
+        assert_eq!(
+            bmin9.notes(),
+            vec![Note::B, Note::D, Note::FSharp, Note::A, Note::CSharp]
+        );
+
         let random = Chord::from_intervals(
             Note::D,
             vec![
@@ -135,6 +153,15 @@ mod tests {
 
         let bmin7 = Chord::build(Note::B, Triad::Min, Some(Extension::MinorSeventh));
         assert_eq!(bmin7.notate(), Ok("Bmin7".to_string()));
+
+        let e9 = Chord::build(Note::E, Triad::Maj, Some(Extension::MinorNinth));
+        assert_eq!(e9.notate(), Ok("E9".to_string()));
+
+        let gmaj9 = Chord::build(Note::G, Triad::Maj, Some(Extension::MajorNinth));
+        assert_eq!(gmaj9.notate(), Ok("Gmaj9".to_string()));
+
+        let bmin9 = Chord::build(Note::B, Triad::Min, Some(Extension::MinorNinth));
+        assert_eq!(bmin9.notate(), Ok("Bmin9".to_string()));
     }
 
     #[test]

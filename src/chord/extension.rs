@@ -1,10 +1,11 @@
 use crate::interval::{GetIntervals, Interval};
-use std::fmt;
 
 #[derive(Clone, Copy, Debug, enum_iterator::Sequence)]
 pub enum Extension {
     MajorSeventh,
     MinorSeventh,
+    MajorNinth,
+    MinorNinth,
 }
 impl GetIntervals for Extension {
     fn intervals(&self) -> Vec<Interval> {
@@ -15,19 +16,12 @@ impl GetIntervals for Extension {
             Extension::MinorSeventh => {
                 vec![Interval::MinorSeventh]
             }
-        }
-    }
-}
-
-impl fmt::Display for Extension {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::MajorSeventh => "maj7",
-                Self::MinorSeventh => "min7",
+            Extension::MajorNinth => {
+                vec![Interval::MajorSeventh, Interval::MajorNinth]
             }
-        )
+            Extension::MinorNinth => {
+                vec![Interval::MinorSeventh, Interval::MajorNinth]
+            }
+        }
     }
 }

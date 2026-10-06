@@ -14,11 +14,15 @@ impl Triad {
         match self {
             Triad::Maj => match extension {
                 Extension::MajorSeventh => Ok("maj7".to_string()),
+                Extension::MajorNinth => Ok("maj9".to_string()),
                 Extension::MinorSeventh => Ok("7".to_string()),
+                Extension::MinorNinth => Ok("9".to_string()),
             },
             Triad::Min => match extension {
                 Extension::MajorSeventh => Err("Invalid extension"),
+                Extension::MajorNinth => Err("Invalid extension"),
                 Extension::MinorSeventh => Ok("min7".to_string()),
+                Extension::MinorNinth => Ok("min9".to_string()),
             },
             Triad::Dim => Err("Diminished chords cannot be extended"),
         }
