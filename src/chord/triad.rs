@@ -7,6 +7,8 @@ pub enum Triad {
     Maj,
     Min,
     Dim,
+    Sus2,
+    Sus4,
 }
 
 impl Triad {
@@ -25,6 +27,18 @@ impl Triad {
                 Extension::MinorNinth => Ok("min9".to_string()),
             },
             Triad::Dim => Err("Diminished chords cannot be extended"),
+            Triad::Sus2 => match extension {
+                Extension::MajorSeventh => Ok("maj7sus2".to_string()),
+                Extension::MajorNinth => Ok("maj9sus2".to_string()),
+                Extension::MinorSeventh => Ok("min7sus2".to_string()),
+                Extension::MinorNinth => Ok("min9sus2".to_string()),
+            },
+            Triad::Sus4 => match extension {
+                Extension::MajorSeventh => Ok("maj7sus4".to_string()),
+                Extension::MajorNinth => Ok("maj9sus4".to_string()),
+                Extension::MinorSeventh => Ok("min7sus4".to_string()),
+                Extension::MinorNinth => Ok("min9sus4".to_string()),
+            },
         }
     }
 }
@@ -43,6 +57,12 @@ impl GetIntervals for Triad {
                 Interval::MinorThird,
                 Interval::DiminishedFifth,
             ],
+            Triad::Sus2 => {
+                vec![Interval::Root, Interval::MajorSecond, Interval::Fifth]
+            }
+            Triad::Sus4 => {
+                vec![Interval::Root, Interval::Fourth, Interval::Fifth]
+            }
         }
     }
 }
@@ -56,6 +76,8 @@ impl fmt::Display for Triad {
                 Self::Maj => "maj",
                 Self::Min => "min",
                 Self::Dim => "dim",
+                Self::Sus2 => "sus2",
+                Self::Sus4 => "sus4",
             }
         )
     }
