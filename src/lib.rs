@@ -1,6 +1,7 @@
 pub mod chord;
 pub mod interval;
 pub mod key;
+pub mod midi;
 pub mod note;
 
 pub use chord::*;
