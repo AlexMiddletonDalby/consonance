@@ -1,5 +1,5 @@
 pub use crate::{
-    chord::{Chord, ChordType},
+    chord::{Chord, Triad},
     interval::Interval,
     note::Note,
 };
@@ -22,16 +22,13 @@ impl fmt::Display for Degree {
     }
 }
 
-pub struct ChordFormula {
+pub struct TriadFormula {
     interval: Interval,
-    chord_type: ChordType,
+    triad: Triad,
 }
-impl ChordFormula {
-    pub const fn new(interval: Interval, chord_type: ChordType) -> Self {
-        Self {
-            interval,
-            chord_type,
-        }
+impl TriadFormula {
+    pub const fn new(interval: Interval, triad: Triad) -> Self {
+        Self { interval, triad }
     }
 }
 #[derive(Clone, Debug, PartialEq, enum_iterator::Sequence)]
@@ -40,25 +37,25 @@ pub enum Mode {
     Minor,
 }
 impl Mode {
-    fn chord_formulae(&self) -> Vec<ChordFormula> {
+    fn formulae(&self) -> Vec<TriadFormula> {
         match self {
             Mode::Major => vec![
-                ChordFormula::new(Interval::Root, ChordType::Maj),
-                ChordFormula::new(Interval::MajorSecond, ChordType::Min),
-                ChordFormula::new(Interval::MajorThird, ChordType::Min),
-                ChordFormula::new(Interval::Fourth, ChordType::Maj),
-                ChordFormula::new(Interval::Fifth, ChordType::Maj),
-                ChordFormula::new(Interval::MajorSixth, ChordType::Min),
-                ChordFormula::new(Interval::MajorSeventh, ChordType::Dim),
+                TriadFormula::new(Interval::Root, Triad::Maj),
+                TriadFormula::new(Interval::MajorSecond, Triad::Min),
+                TriadFormula::new(Interval::MajorThird, Triad::Min),
+                TriadFormula::new(Interval::Fourth, Triad::Maj),
+                TriadFormula::new(Interval::Fifth, Triad::Maj),
+                TriadFormula::new(Interval::MajorSixth, Triad::Min),
+                TriadFormula::new(Interval::MajorSeventh, Triad::Dim),
             ],
             Mode::Minor => vec![
-                ChordFormula::new(Interval::Root, ChordType::Min),
-                ChordFormula::new(Interval::MajorSecond, ChordType::Dim),
-                ChordFormula::new(Interval::MinorThird, ChordType::Maj),
-                ChordFormula::new(Interval::Fourth, ChordType::Min),
-                ChordFormula::new(Interval::Fifth, ChordType::Min),
-                ChordFormula::new(Interval::MinorSixth, ChordType::Maj),
-                ChordFormula::new(Interval::MinorSeventh, ChordType::Maj),
+                TriadFormula::new(Interval::Root, Triad::Min),
+                TriadFormula::new(Interval::MajorSecond, Triad::Dim),
+                TriadFormula::new(Interval::MinorThird, Triad::Maj),
+                TriadFormula::new(Interval::Fourth, Triad::Min),
+                TriadFormula::new(Interval::Fifth, Triad::Min),
+                TriadFormula::new(Interval::MinorSixth, Triad::Maj),
+                TriadFormula::new(Interval::MinorSeventh, Triad::Maj),
             ],
         }
     }
@@ -87,10 +84,10 @@ impl Key {
         let mut chords = Vec::new();
 
         let mut degree = Degree::I;
-        for formula in self.mode.chord_formulae() {
+        for formula in self.mode.formulae() {
             chords.push((
                 degree.clone(),
-                Chord::of_type(self.root.transposed(&formula.interval), formula.chord_type),
+                Chord::triad(self.root.transposed(&formula.interval), formula.triad),
             ));
             if let Some(next_degree) = enum_iterator::next(&degree) {
                 degree = next_degree
@@ -128,26 +125,26 @@ mod tests {
         assert_eq!(
             Key::of(Note::C, Mode::Major).chords(),
             vec![
-                (Degree::I, Chord::of_type(Note::C, ChordType::Maj)),
-                (Degree::II, Chord::of_type(Note::D, ChordType::Min)),
-                (Degree::III, Chord::of_type(Note::E, ChordType::Min,)),
-                (Degree::IV, Chord::of_type(Note::F, ChordType::Maj,)),
-                (Degree::V, Chord::of_type(Note::G, ChordType::Maj,)),
-                (Degree::VI, Chord::of_type(Note::A, ChordType::Min,)),
-                (Degree::VII, Chord::of_type(Note::B, ChordType::Dim,))
+                (Degree::I, Chord::triad(Note::C, Triad::Maj)),
+                (Degree::II, Chord::triad(Note::D, Triad::Min)),
+                (Degree::III, Chord::triad(Note::E, Triad::Min,)),
+                (Degree::IV, Chord::triad(Note::F, Triad::Maj,)),
+                (Degree::V, Chord::triad(Note::G, Triad::Maj,)),
+                (Degree::VI, Chord::triad(Note::A, Triad::Min,)),
+                (Degree::VII, Chord::triad(Note::B, Triad::Dim,))
             ]
         );
 
         assert_eq!(
             Key::of(Note::A, Mode::Minor).chords(),
             vec![
-                (Degree::I, Chord::of_type(Note::A, ChordType::Min,)),
-                (Degree::II, Chord::of_type(Note::B, ChordType::Dim,)),
-                (Degree::III, Chord::of_type(Note::C, ChordType::Maj,)),
-                (Degree::IV, Chord::of_type(Note::D, ChordType::Min,)),
-                (Degree::V, Chord::of_type(Note::E, ChordType::Min,)),
-                (Degree::VI, Chord::of_type(Note::F, ChordType::Maj,)),
-                (Degree::VII, Chord::of_type(Note::G, ChordType::Maj,))
+                (Degree::I, Chord::triad(Note::A, Triad::Min,)),
+                (Degree::II, Chord::triad(Note::B, Triad::Dim,)),
+                (Degree::III, Chord::triad(Note::C, Triad::Maj,)),
+                (Degree::IV, Chord::triad(Note::D, Triad::Min,)),
+                (Degree::V, Chord::triad(Note::E, Triad::Min,)),
+                (Degree::VI, Chord::triad(Note::F, Triad::Maj,)),
+                (Degree::VII, Chord::triad(Note::G, Triad::Maj,))
             ]
         );
     }

@@ -15,6 +15,8 @@ pub enum Interval {
     MinorSeventh,
     MajorSeventh,
     Octave,
+    MinorNinth,
+    MajorNinth,
 }
 
 impl Interval {
@@ -33,6 +35,8 @@ impl Interval {
             Interval::MinorSeventh => 10,
             Interval::MajorSeventh => 11,
             Interval::Octave => 12,
+            Interval::MinorNinth => 13,
+            Interval::MajorNinth => 14,
         }
     }
 }
@@ -41,4 +45,8 @@ impl std::fmt::Display for Interval {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
     }
+}
+
+pub trait GetIntervals {
+    fn intervals(&self) -> Vec<Interval>;
 }
