@@ -4,21 +4,21 @@ use crate::note::Note;
 const NOTE_ON: u8 = 0x90;
 const NOTE_OFF: u8 = 0x80;
 
-pub trait Midi {
-    fn midi_message(&self, message: u8, props: NoteProperties)
-    -> impl Iterator<Item = NoteMessage>;
+pub trait ToMidi<M> {
+    fn to_midi(&self, message: u8, props: Properties) -> M;
 
-    fn note_on(&self, props: NoteProperties) -> impl Iterator<Item = NoteMessage> {
-        self.midi_message(NOTE_ON, props)
+    fn note_on(&self, props: Properties) -> M {
+        self.to_midi(NOTE_ON, props)
     }
-    fn note_off(&self, props: NoteProperties) -> impl Iterator<Item = NoteMessage> {
-        self.midi_message(NOTE_OFF, props)
+    fn note_off(&self, props: Properties) -> M {
+        self.to_midi(NOTE_OFF, props)
     }
 }
 
-type NoteMessage = [u8; 3];
+type Message = [u8; 3];
+
 #[derive(Clone)]
-pub struct NoteProperties {
+pub struct Properties {
     pub octave: i16,
     pub velocity: u8,
 }
@@ -43,7 +43,7 @@ fn midi_note_value(note: &Note, octave: i16) -> u8 {
     (base_note + (12 * octave_shift)).clamp(0, 127) as u8
 }
 
-fn to_midi_message(note: &Note, message_type: u8, props: &NoteProperties) -> NoteMessage {
+fn midi_message(note: &Note, message_type: u8, props: &Properties) -> Message {
     [
         message_type,
         midi_note_value(note, props.octave),
@@ -51,23 +51,15 @@ fn to_midi_message(note: &Note, message_type: u8, props: &NoteProperties) -> Not
     ]
 }
 
-impl Midi for Note {
-    fn midi_message(
-        &self,
-        message: u8,
-        props: NoteProperties,
-    ) -> impl Iterator<Item = NoteMessage> {
-        [to_midi_message(self, message, &props)].into_iter()
+impl ToMidi<Message> for Note {
+    fn to_midi(&self, message: u8, props: Properties) -> Message {
+        midi_message(self, message, &props)
     }
 }
 
-impl Midi for Chord {
-    fn midi_message(
-        &self,
-        message: u8,
-        props: NoteProperties,
-    ) -> impl Iterator<Item = NoteMessage> {
-        let mut messages: Vec<NoteMessage> = Vec::new();
+impl ToMidi<Vec<Message>> for Chord {
+    fn to_midi(&self, message: u8, props: Properties) -> Vec<Message> {
+        let mut messages: Vec<Message> = Vec::new();
         let mut props = props.clone();
 
         let mut previous_note: Option<Note> = None;
@@ -79,11 +71,11 @@ impl Midi for Chord {
                 }
             }
 
-            messages.push(to_midi_message(&note, message, &props));
+            messages.push(midi_message(&note, message, &props));
             previous_note = Some(note);
         }
 
-        messages.into_iter()
+        messages
     }
 }
 
@@ -93,12 +85,12 @@ mod tests {
     use crate::{Extension, Modifiers, Triad};
 
     #[test]
-    fn convert_single_notes_to_midi() {
+    fn convert_single_notes_to_midi_messages() {
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::C,
                 NOTE_ON,
-                &NoteProperties {
+                &Properties {
                     octave: 4,
                     velocity: 127
                 }
@@ -106,10 +98,10 @@ mod tests {
             [0x90, 60, 127]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::F,
                 NOTE_ON,
-                &NoteProperties {
+                &Properties {
                     octave: 5,
                     velocity: 100
                 }
@@ -117,10 +109,10 @@ mod tests {
             [0x90, 77, 100]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::A,
                 NOTE_ON,
-                &NoteProperties {
+                &Properties {
                     octave: -12,
                     velocity: 0
                 }
@@ -128,10 +120,10 @@ mod tests {
             [0x90, 0, 0]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::A,
                 NOTE_ON,
-                &NoteProperties {
+                &Properties {
                     octave: 64,
                     velocity: 50
                 }
@@ -139,10 +131,10 @@ mod tests {
             [0x90, 127, 50]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::C,
                 NOTE_OFF,
-                &NoteProperties {
+                &Properties {
                     octave: 4,
                     velocity: 127
                 }
@@ -150,10 +142,10 @@ mod tests {
             [0x80, 60, 127]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::F,
                 NOTE_OFF,
-                &NoteProperties {
+                &Properties {
                     octave: 5,
                     velocity: 100
                 }
@@ -161,10 +153,10 @@ mod tests {
             [0x80, 77, 100]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::A,
                 NOTE_OFF,
-                &NoteProperties {
+                &Properties {
                     octave: -12,
                     velocity: 0
                 }
@@ -172,10 +164,10 @@ mod tests {
             [0x80, 0, 0]
         );
         assert_eq!(
-            to_midi_message(
+            midi_message(
                 &Note::A,
                 NOTE_OFF,
-                &NoteProperties {
+                &Properties {
                     octave: 64,
                     velocity: 50
                 }
@@ -186,50 +178,41 @@ mod tests {
 
     #[test]
     fn convert_notes_to_midi_stream() {
-        let c4_on_midi: Vec<NoteMessage> = Note::C
-            .note_on(NoteProperties {
-                octave: 4,
-                velocity: 127,
-            })
-            .collect();
-        assert_eq!(c4_on_midi, vec![[0x90, 60, 127]]);
+        let c4_on_midi = Note::C.note_on(Properties {
+            octave: 4,
+            velocity: 127,
+        });
+        assert_eq!(c4_on_midi, [0x90, 60, 127]);
 
-        let f5_on_midi: Vec<NoteMessage> = Note::F
-            .note_off(NoteProperties {
-                octave: 5,
-                velocity: 100,
-            })
-            .collect();
-        assert_eq!(f5_on_midi, vec![[0x80, 77, 100]]);
+        let f5_on_midi = Note::F.note_off(Properties {
+            octave: 5,
+            velocity: 100,
+        });
+        assert_eq!(f5_on_midi, [0x80, 77, 100]);
     }
 
     #[test]
     fn convert_chords_to_midi_stream() {
-        let cmaj4_on_midi: Vec<NoteMessage> = Chord::triad(Note::C, Triad::Maj)
-            .note_on(NoteProperties {
-                octave: 4,
-                velocity: 127,
-            })
-            .collect();
-
+        let cmaj4_on_midi = Chord::triad(Note::C, Triad::Maj).note_on(Properties {
+            octave: 4,
+            velocity: 127,
+        });
         assert_eq!(
             cmaj4_on_midi,
             vec![[0x90, 60, 127], [0x90, 64, 127], [0x90, 67, 127]]
         );
 
-        let amin7_off_midi: Vec<NoteMessage> = Chord::build(
+        let amin7_off_midi = Chord::build(
             Note::A,
             Triad::Min,
             Modifiers {
                 extension: Some(Extension::MinorSeventh),
             },
         )
-        .note_off(NoteProperties {
+        .note_off(Properties {
             octave: 4,
             velocity: 127,
-        })
-        .collect();
-
+        });
         assert_eq!(
             amin7_off_midi,
             vec![
