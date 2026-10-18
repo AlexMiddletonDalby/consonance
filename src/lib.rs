@@ -3,6 +3,7 @@ pub mod interval;
 pub mod key;
 pub mod midi;
 pub mod note;
+pub mod octave;
 
 pub use chord::*;
 pub use key::*;
