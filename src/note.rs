@@ -1,4 +1,5 @@
 pub use crate::interval::Interval;
+pub use crate::octave::Octave;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, enum_iterator::Sequence)]

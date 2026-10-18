@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct Octave(i8);
 impl Octave {
     pub const MIDDLE_C: i8 = 4;

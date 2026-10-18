@@ -1,5 +1,6 @@
 use crate::chord::Chord;
 use crate::note::Note;
+use crate::octave::Octave;
 
 const NOTE_ON: u8 = 0x90;
 const NOTE_OFF: u8 = 0x80;
@@ -9,9 +10,8 @@ pub struct Message {
     data: Vec<u8>,
 }
 impl Message {
-    fn midi_note_value(note: &Note, octave: i16) -> u8 {
-        const MIDDLE_C_OCTAVE: i16 = 4;
-        let octave_shift = octave - MIDDLE_C_OCTAVE;
+    fn midi_note_value(note: &Note, octave: &Octave) -> u8 {
+        let octave_shift = octave.relative_to_middle_c() as i16;
         let base_note = match note {
             Note::C => 60,
             Note::CSharp => 61,
@@ -43,7 +43,7 @@ impl Message {
         Self {
             data: vec![
                 message,
-                Self::midi_note_value(&note, props.octave),
+                Self::midi_note_value(&note, &props.octave),
                 props.velocity,
             ],
         }
@@ -60,7 +60,7 @@ impl Message {
 }
 #[derive(Clone)]
 pub struct Properties {
-    pub octave: i16,
+    pub octave: Octave,
     pub velocity: u8,
 }
 
@@ -89,7 +89,7 @@ impl ToMessage for Chord {
             if let Some(previous) = previous_note {
                 let wrapped_around = note < previous;
                 if wrapped_around {
-                    props.octave += 1;
+                    props.octave = props.octave.plus(1);
                 }
             }
 
@@ -113,7 +113,7 @@ mod tests {
                 &Note::C,
                 NOTE_ON,
                 &Properties {
-                    octave: 4,
+                    octave: Octave::middle_c(),
                     velocity: 127
                 }
             ),
@@ -124,7 +124,7 @@ mod tests {
                 &Note::F,
                 NOTE_ON,
                 &Properties {
-                    octave: 5,
+                    octave: Octave::middle_c().plus(1),
                     velocity: 100
                 }
             ),
@@ -135,7 +135,7 @@ mod tests {
                 &Note::A,
                 NOTE_ON,
                 &Properties {
-                    octave: -12,
+                    octave: Octave::build(-12),
                     velocity: 0
                 }
             ),
@@ -146,7 +146,7 @@ mod tests {
                 &Note::A,
                 NOTE_ON,
                 &Properties {
-                    octave: 64,
+                    octave: Octave::build(64),
                     velocity: 50
                 }
             ),
@@ -157,7 +157,7 @@ mod tests {
                 &Note::C,
                 NOTE_OFF,
                 &Properties {
-                    octave: 4,
+                    octave: Octave::middle_c(),
                     velocity: 127
                 }
             ),
@@ -168,7 +168,7 @@ mod tests {
                 &Note::F,
                 NOTE_OFF,
                 &Properties {
-                    octave: 5,
+                    octave: Octave::middle_c().plus(1),
                     velocity: 100
                 }
             ),
@@ -179,7 +179,7 @@ mod tests {
                 &Note::A,
                 NOTE_OFF,
                 &Properties {
-                    octave: -12,
+                    octave: Octave::build(-12),
                     velocity: 0
                 }
             ),
@@ -190,7 +190,7 @@ mod tests {
                 &Note::A,
                 NOTE_OFF,
                 &Properties {
-                    octave: 64,
+                    octave: Octave::build(64),
                     velocity: 50
                 }
             ),
@@ -212,13 +212,13 @@ mod tests {
     #[test]
     fn convert_notes_to_note_messages() {
         let c4_on_midi = Note::C.note_on(Properties {
-            octave: 4,
+            octave: Octave::middle_c(),
             velocity: 127,
         });
         assert_eq!(c4_on_midi, Message::new(&[0x90, 60, 127]));
 
         let f5_on_midi = Note::F.note_off(Properties {
-            octave: 5,
+            octave: Octave::middle_c().plus(1),
             velocity: 100,
         });
         assert_eq!(f5_on_midi, Message::new(&[0x80, 77, 100]));
@@ -227,7 +227,7 @@ mod tests {
     #[test]
     fn convert_chords_to_note_messages() {
         let cmaj4_on_midi = Chord::triad(Note::C, Triad::Maj).note_on(Properties {
-            octave: 4,
+            octave: Octave::middle_c(),
             velocity: 127,
         });
         assert_eq!(
@@ -243,7 +243,7 @@ mod tests {
             },
         )
         .note_off(Properties {
-            octave: 4,
+            octave: Octave::middle_c(),
             velocity: 127,
         });
         assert_eq!(
