@@ -48,15 +48,6 @@ impl Message {
             ],
         }
     }
-
-    fn combined(messages: &[Self]) -> Self {
-        let mut data: Vec<u8> = Vec::new();
-        for message in messages.into_iter() {
-            data.extend(&message.data);
-        }
-
-        Self { data }
-    }
 }
 #[derive(Clone)]
 pub struct Properties {
@@ -64,23 +55,23 @@ pub struct Properties {
     pub velocity: u8,
 }
 
-pub trait ToMessage {
-    fn note_message(&self, message: u8, props: Properties) -> Message;
+pub trait ToMidi<M> {
+    fn note_message(&self, message: u8, props: Properties) -> M;
 
-    fn note_on(&self, props: Properties) -> Message {
+    fn note_on(&self, props: Properties) -> M {
         self.note_message(NOTE_ON, props)
     }
-    fn note_off(&self, props: Properties) -> Message {
+    fn note_off(&self, props: Properties) -> M {
         self.note_message(NOTE_OFF, props)
     }
 }
-impl ToMessage for Note {
+impl ToMidi<Message> for Note {
     fn note_message(&self, message: u8, props: Properties) -> Message {
         Message::note(self, message, &props)
     }
 }
-impl ToMessage for Chord {
-    fn note_message(&self, message: u8, props: Properties) -> Message {
+impl ToMidi<Vec<Message>> for Chord {
+    fn note_message(&self, message: u8, props: Properties) -> Vec<Message> {
         let mut messages: Vec<Message> = Vec::new();
         let mut props = props.clone();
 
@@ -97,7 +88,7 @@ impl ToMessage for Chord {
             previous_note = Some(note);
         }
 
-        Message::combined(&messages)
+        messages
     }
 }
 
@@ -199,17 +190,6 @@ mod tests {
     }
 
     #[test]
-    fn combine_note_messages_together() {
-        let first = Message::new(&[0x90, 60, 127]);
-        let second = Message::new(&[0x90, 65, 100]);
-
-        assert_eq!(
-            Message::combined(&[first, second]),
-            Message::new(&[0x90, 60, 127, 0x90, 65, 100])
-        );
-    }
-
-    #[test]
     fn convert_notes_to_note_messages() {
         let c4_on_midi = Note::C.note_on(Properties {
             octave: Octave::middle_c(),
@@ -232,7 +212,11 @@ mod tests {
         });
         assert_eq!(
             cmaj4_on_midi,
-            Message::new(&[0x90, 60, 127, 0x90, 64, 127, 0x90, 67, 127])
+            vec![
+                Message::new(&[0x90, 60, 127]),
+                Message::new(&[0x90, 64, 127]),
+                Message::new(&[0x90, 67, 127]),
+            ]
         );
 
         let amin7_off_midi = Chord::build(
@@ -248,7 +232,12 @@ mod tests {
         });
         assert_eq!(
             amin7_off_midi,
-            Message::new(&[0x80, 69, 127, 0x80, 72, 127, 0x80, 76, 127, 0x80, 79, 127])
+            vec![
+                Message::new(&[0x80, 69, 127]),
+                Message::new(&[0x80, 72, 127]),
+                Message::new(&[0x80, 76, 127]),
+                Message::new(&[0x80, 79, 127]),
+            ]
         );
     }
 }
